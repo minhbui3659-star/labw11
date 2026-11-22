@@ -1,25 +1,51 @@
 @startuml
-title Campus Safety Hub - Lab 11
-hide empty members
-skinparam classAttributeIconSize 0
+title Campus Safety Hub — Sơ đồ lớp Lab 11
 
-package Adapter {
+hide empty members
+skinparam BackgroundColor #FFFFFF
+skinparam DefaultFontName "DejaVu Sans"
+skinparam DefaultFontColor #172638
+skinparam ArrowColor #52657A
+skinparam ClassAttributeIconSize 0
+skinparam ClassBackgroundColor #FFFFFF
+skinparam ClassBorderColor #607488
+skinparam PackageBorderColor #607488
+skinparam Shadowing false
+skinparam Nodesep 33
+skinparam Ranksep 38
+
+package Adapter #EAF3FD {
     interface ISensor {
         +ReadValue(): double
         +GetUnit(): string
     }
 
-    class LegacySmokeDetector {
+    class SmokeSensorAdapter {
+        +SmokeSensorAdapter(legacy: LegacySmokeDetector)
+        +ReadValue(): double
+        +GetUnit(): string
+    }
+
+    class LegacySmokeDetector <<sealed>> {
         -smokeLevel: int
+        +LegacySmokeDetector(smokeLevel: int)
         +GetSmokeLevel(): int
         +GetDescription(): string
         +SetSmokeLevel(value: int): void
     }
 
-    class SmokeSensorAdapter
+    SmokeSensorAdapter .left.|> ISensor
+    SmokeSensorAdapter -right-> "1" LegacySmokeDetector : legacy
 }
 
-package Observer {
+package Observer #E9F6F1 {
+    class SensorMonitor {
+        +Attach(observer: IAlertObserver): void
+        +Detach(observer: IAlertObserver): void
+        +CheckSensor(sensorName: string, sensor: ISensor): void
+        -Notify(alertEvent: AlertEvent): void
+    }
+
     class AlertEvent <<record>> {
         +SensorName: string
         +Value: double
@@ -32,26 +58,53 @@ package Observer {
         +Update(alertEvent: AlertEvent): void
     }
 
-    class SensorMonitor {
-        +Attach(observer: IAlertObserver): void
-        +Detach(observer: IAlertObserver): void
-        +CheckSensor(sensorName: string, sensor: ISensor): void
-        -Notify(alertEvent: AlertEvent): void
+    class DashboardObserver
+
+    class EmailAlertObserver
+
+    class AuditLogObserver
+
+    class ActionObserver <<test helper>> {
+        -action: Action<AlertEvent>
+        +ActionObserver(action: Action<AlertEvent>)
+        +Update(alertEvent: AlertEvent): void
     }
 
-    class DashboardObserver
-    class EmailAlertObserver
-    class AuditLogObserver
-    class EmergencyBridgeObserver
-    class ActionObserver <<test helper>>
+    class EmergencyBridgeObserver {
+        +EmergencyBridgeObserver(\n mediator: IEmergencyMediator)
+        +Update(alertEvent: AlertEvent): void
+    }
+
+    note right of SensorMonitor
+        Dưới 50%: không phát cảnh báo
+        50% đến dưới 70%: WARNING
+        Từ 70%: CRITICAL
+    end note
+
+    SensorMonitor .down.> AlertEvent : tạo
+    SensorMonitor -down-> "0..*" IAlertObserver : observers
+    IAlertObserver .left.> AlertEvent : tham số
+
+    DashboardObserver .up.|> IAlertObserver
+    EmailAlertObserver .up.|> IAlertObserver
+    EmergencyBridgeObserver .up.|> IAlertObserver
+    AuditLogObserver .up.|> IAlertObserver
+    ActionObserver .up.|> IAlertObserver
+    DashboardObserver -[hidden]right- EmailAlertObserver
+    EmailAlertObserver -[hidden]right- EmergencyBridgeObserver
+    EmergencyBridgeObserver -[hidden]right- AuditLogObserver
+    AuditLogObserver -[hidden]right- ActionObserver
 }
 
-package Mediator {
+package Mediator #F3EEFA {
     interface IEmergencyMediator {
         +Notify(sender: object, eventCode: string): void
     }
 
-    class EmergencyMediator
+    class EmergencyMediator {
+        +EmergencyMediator(alarm: Alarm, door: DoorController,\n ventilation: VentilationController)
+        +Notify(sender: object, eventCode: string): void
+    }
 
     class Alarm {
         +SetMediator(mediator: IEmergencyMediator): void
@@ -70,28 +123,17 @@ package Mediator {
         +Shutdown(): void
         +Start(): void
     }
+
+    EmergencyMediator .up.|> IEmergencyMediator
+    EmergencyMediator -down-> "1" Alarm : alarm
+    EmergencyMediator -down-> "1" DoorController : door
+    EmergencyMediator -down-> "1" VentilationController : ventilation
+
+    Alarm --> "0..1" IEmergencyMediator : mediator
+    DoorController --> "0..1" IEmergencyMediator : mediator
+    VentilationController --> "0..1" IEmergencyMediator : mediator
 }
 
-SmokeSensorAdapter ..|> ISensor
-SmokeSensorAdapter --> LegacySmokeDetector : wraps
-SensorMonitor ..> ISensor : reads
-SensorMonitor ..> AlertEvent : creates
-SensorMonitor --> "0..*" IAlertObserver : notifies
-IAlertObserver ..> AlertEvent : receives
-
-DashboardObserver ..|> IAlertObserver
-EmailAlertObserver ..|> IAlertObserver
-AuditLogObserver ..|> IAlertObserver
-EmergencyBridgeObserver ..|> IAlertObserver
-ActionObserver ..|> IAlertObserver
-
-EmergencyBridgeObserver --> IEmergencyMediator : FIRE_DETECTED on CRITICAL
-EmergencyMediator ..|> IEmergencyMediator
-EmergencyMediator --> Alarm : triggers
-EmergencyMediator --> DoorController : unlocks
-EmergencyMediator --> VentilationController : shuts down
-
-Alarm --> "0..1" IEmergencyMediator : reports
-DoorController --> "0..1" IEmergencyMediator : reports
-VentilationController --> "0..1" IEmergencyMediator : reports
+SensorMonitor .up.> ISensor : đọc cảm biến
+EmergencyBridgeObserver -down-> "1" IEmergencyMediator : FIRE_DETECTED khi CRITICAL
 @enduml
