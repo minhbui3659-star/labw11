@@ -7,6 +7,4 @@
 
 ## Sơ đồ lớp UML
 
-![Sơ đồ lớp Campus Safety Hub với ba nhóm Adapter, Observer và Mediator](uml_a11.svg)
-
 [Mã nguồn PlantUML](uml_a11.puml)
