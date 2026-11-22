@@ -1,0 +1,97 @@
+@startuml
+title Campus Safety Hub - Lab 11
+hide empty members
+skinparam classAttributeIconSize 0
+
+package Adapter {
+    interface ISensor {
+        +ReadValue(): double
+        +GetUnit(): string
+    }
+
+    class LegacySmokeDetector {
+        -smokeLevel: int
+        +GetSmokeLevel(): int
+        +GetDescription(): string
+        +SetSmokeLevel(value: int): void
+    }
+
+    class SmokeSensorAdapter
+}
+
+package Observer {
+    class AlertEvent <<record>> {
+        +SensorName: string
+        +Value: double
+        +Unit: string
+        +Severity: string
+        +OccurredAt: DateTime
+    }
+
+    interface IAlertObserver {
+        +Update(alertEvent: AlertEvent): void
+    }
+
+    class SensorMonitor {
+        +Attach(observer: IAlertObserver): void
+        +Detach(observer: IAlertObserver): void
+        +CheckSensor(sensorName: string, sensor: ISensor): void
+        -Notify(alertEvent: AlertEvent): void
+    }
+
+    class DashboardObserver
+    class EmailAlertObserver
+    class AuditLogObserver
+    class EmergencyBridgeObserver
+    class ActionObserver <<test helper>>
+}
+
+package Mediator {
+    interface IEmergencyMediator {
+        +Notify(sender: object, eventCode: string): void
+    }
+
+    class EmergencyMediator
+
+    class Alarm {
+        +SetMediator(mediator: IEmergencyMediator): void
+        +Trigger(): void
+        +Reset(): void
+    }
+
+    class DoorController {
+        +SetMediator(mediator: IEmergencyMediator): void
+        +UnlockAll(): void
+        +LockAll(): void
+    }
+
+    class VentilationController {
+        +SetMediator(mediator: IEmergencyMediator): void
+        +Shutdown(): void
+        +Start(): void
+    }
+}
+
+SmokeSensorAdapter ..|> ISensor
+SmokeSensorAdapter --> LegacySmokeDetector : wraps
+SensorMonitor ..> ISensor : reads
+SensorMonitor ..> AlertEvent : creates
+SensorMonitor --> "0..*" IAlertObserver : notifies
+IAlertObserver ..> AlertEvent : receives
+
+DashboardObserver ..|> IAlertObserver
+EmailAlertObserver ..|> IAlertObserver
+AuditLogObserver ..|> IAlertObserver
+EmergencyBridgeObserver ..|> IAlertObserver
+ActionObserver ..|> IAlertObserver
+
+EmergencyBridgeObserver --> IEmergencyMediator : FIRE_DETECTED on CRITICAL
+EmergencyMediator ..|> IEmergencyMediator
+EmergencyMediator --> Alarm : triggers
+EmergencyMediator --> DoorController : unlocks
+EmergencyMediator --> VentilationController : shuts down
+
+Alarm --> "0..1" IEmergencyMediator : reports
+DoorController --> "0..1" IEmergencyMediator : reports
+VentilationController --> "0..1" IEmergencyMediator : reports
+@enduml
