@@ -1,3 +1,7 @@
+/****************/
+// 202418944
+// Bùi Nhật Minh
+/****************/
 namespace CampusSafetyHub.Adapter;
 
 // Lop cu, gia dinh khong duoc sua

@@ -1,3 +1,7 @@
+/****************/
+// 202418944
+// Bùi Nhật Minh
+/****************/
 namespace CampusSafetyHub.Mediator;
 
 public sealed class VentilationController

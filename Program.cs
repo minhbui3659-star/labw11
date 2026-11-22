@@ -1,3 +1,7 @@
+/****************/
+// 202418944
+// Bùi Nhật Minh
+/****************/
 using CampusSafetyHub.Adapter;
 using CampusSafetyHub.Mediator;
 using CampusSafetyHub.Observer;
